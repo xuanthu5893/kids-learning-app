@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Bé Học & Vẽ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Comic+Neue:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ══ HOME ══ -->
+<div id="home" class="screen active">
+  <div class="home-emoji">🎨</div>
+  <div class="home-title">Bé Học & Vẽ</div>
+  <div class="home-buttons">
+    <button class="module-btn btn-blue" onclick="startModule('letters')">
+      <div class="icon">🔤</div>
+      <div class="label"><strong>Tập viết chữ</strong><span>A-Z và tiếng Việt</span></div>
+      <div class="chevron">›</div>
+    </button>
+    <button class="module-btn btn-orange" onclick="startModule('numbers')">
+      <div class="icon">🔢</div>
+      <div class="label"><strong>Tập viết số</strong><span>Số 0 đến 9</span></div>
+      <div class="chevron">›</div>
+    </button>
+    <button class="module-btn btn-purple" onclick="startModule('math')">
+      <div class="icon">➕</div>
+      <div class="label"><strong>Tập toán</strong><span>Cộng trừ đơn giản</span></div>
+      <div class="chevron">›</div>
+    </button>
+    <button class="module-btn btn-brown" onclick="showScreen('notebook'); initNotebook()">
+      <div class="icon">📓</div>
+      <div class="label"><strong>Vở ô ly</strong><span>Tập viết tự do trên ô ly</span></div>
+      <div class="chevron">›</div>
+    </button>
+    <button class="module-btn btn-pink" onclick="showScreen('freedraw'); initFreeDraw()">
+      <div class="icon">🖌️</div>
+      <div class="label"><strong>Vẽ tự do</strong><span>Vẽ và tô màu tùy thích</span></div>
+      <div class="chevron">›</div>
+    </button>
+    <button class="module-btn btn-teal" onclick="showScreen('coloring'); initColoring()">
+      <div class="icon">🖍️</div>
+      <div class="label"><strong>Tô màu</strong><span>Tô màu tranh có sẵn</span></div>
+      <div class="chevron">›</div>
+    </button>
+    <button class="module-btn btn-red" onclick="showScreen('challenge'); setupChallenge()">
+      <div class="icon">🏆</div>
+      <div class="label"><strong>Thử thách</strong><span>Làm bài trong thời gian</span></div>
+      <div class="chevron">›</div>
+    </button>
+    <button class="module-btn btn-indigo" onclick="showScreen('dotgame'); initDotGame()">
+      <div class="icon">🔵</div>
+      <div class="label"><strong>Nối chấm</strong><span>Vẽ hình bằng cách nối điểm</span></div>
+      <div class="chevron">›</div>
+    </button>
+    <button class="module-btn btn-green" onclick="showScreen('gallery'); renderGallery()">
+      <div class="icon">🖼️</div>
+      <div class="label"><strong>Bộ sưu tập</strong><span>Tranh đã lưu lại</span></div>
+      <div class="chevron">›</div>
+    </button>
+    <button class="module-btn btn-yellow" onclick="showScreen('progress'); renderProgress()">
+      <div class="icon">📊</div>
+      <div class="label"><strong>Tiến độ</strong><span>Lịch học và chuỗi ngày</span></div>
+      <div class="chevron">›</div>
+    </button>
+  </div>
+</div>
+
+<!-- ══ PRACTICE ══ -->
+<div id="practice" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="goHome()">‹ Về</button>
+    <div class="progress-label" id="progress-label">1 / 1</div>
+    <div class="header-toggles">
+      <button class="toggle-btn" id="tts-btn" onclick="toggleTTS()">🔊</button>
+      <button class="toggle-btn" id="trace-btn" onclick="toggleTrace()">✏️</button>
+    </div>
+  </div>
+  <div class="sample-display">
+    <div id="sample-char" class="sample-char"></div>
+  </div>
+  <div class="math-hint" id="math-hint" style="display:none">Viết đáp án vào ô bên dưới</div>
+  <div class="nav-row">
+    <button class="nav-btn btn-prev"      id="btn-prev" onclick="navigate(-1)">‹ Trước</button>
+    <button class="nav-btn btn-clear-red"              onclick="clearPractice()">🗑 Xóa</button>
+    <button class="nav-btn btn-next-blue" id="btn-next" onclick="navigate(1)">Tiếp ›</button>
+  </div>
+  <div class="canvas-wrapper">
+    <canvas id="practice-canvas" class="draw-canvas"></canvas>
+  </div>
+</div>
+
+<!-- ══ FREE DRAW ══ -->
+<div id="freedraw" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="goHome()">‹ Về</button>
+    <div class="screen-title">Vẽ tự do</div>
+    <button class="back-btn" onclick="saveCurrentFreeDraw()" style="color:#34C759;font-size:15px">💾 Lưu</button>
+  </div>
+  <div class="draw-toolbar">
+    <div class="color-palette" id="fd-palette"></div>
+    <div class="tool-row">
+      <button class="tool-btn selected" id="fd-sm"  onclick="setFDBrush(3,'fd-sm')">S</button>
+      <button class="tool-btn"          id="fd-md"  onclick="setFDBrush(8,'fd-md')">M</button>
+      <button class="tool-btn"          id="fd-lg"  onclick="setFDBrush(18,'fd-lg')">L</button>
+      <button class="tool-btn eraser"   id="fd-era" onclick="setFDEraser()">🧽 Tẩy</button>
+      <button class="tool-btn clear-btn"             onclick="clearFD()">🗑 Xóa hết</button>
+    </div>
+  </div>
+  <div class="canvas-wrapper">
+    <canvas id="freedraw-canvas" class="draw-canvas"></canvas>
+  </div>
+</div>
+
+<!-- ══ NOTEBOOK (VỞ Ô LY) ══ -->
+<div id="notebook" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="goHome()">‹ Về</button>
+    <div class="screen-title">📓 Vở ô ly</div>
+    <button class="back-btn" onclick="saveCurrentNotebook()" style="color:#34C759;font-size:15px">💾 Lưu</button>
+  </div>
+  <div class="notebook-toolbar">
+    <button class="nb-color selected" style="background:#1a56db" data-c="#1a56db" onclick="setNBColor(this)"></button>
+    <button class="nb-color" style="background:#1c1c1e" data-c="#1c1c1e" onclick="setNBColor(this)"></button>
+    <button class="nb-color" style="background:#e02424" data-c="#e02424" onclick="setNBColor(this)"></button>
+    <button class="nb-color" style="background:#057a55" data-c="#057a55" onclick="setNBColor(this)"></button>
+    <button class="nb-tool" id="nb-era" onclick="toggleNBEraser()">🧽 Tẩy</button>
+    <button class="nb-tool" onclick="clearNotebook()" style="background:rgba(255,59,48,.12);color:#ff3b30;margin-left:auto">🗑 Xóa</button>
+  </div>
+  <div class="canvas-wrapper" id="nb-wrapper">
+    <canvas id="nb-grid-canvas" class="draw-canvas"></canvas>
+    <canvas id="nb-canvas"      class="draw-canvas"></canvas>
+  </div>
+</div>
+
+<!-- ══ COLORING ══ -->
+<div id="coloring" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="goHome()">‹ Về</button>
+    <div class="screen-title">Tô màu</div>
+    <button class="back-btn" onclick="saveCurrentColoring()" style="color:#34C759;font-size:15px">💾 Lưu</button>
+  </div>
+  <div class="coloring-toolbar">
+    <div class="shape-nav">
+      <button class="shape-nav-btn" id="col-prev" onclick="changeShape(-1)">‹</button>
+      <div class="shape-name" id="col-shape-name">Mặt trời</div>
+      <button class="shape-nav-btn" id="col-next" onclick="changeShape(1)">›</button>
+    </div>
+    <div class="color-palette" id="col-palette"></div>
+    <div class="tool-row">
+      <button class="tool-btn selected" id="col-fill" onclick="setColMode('fill')">🪣 Tô màu</button>
+      <button class="tool-btn"          id="col-pen"  onclick="setColMode('pen')">✏️ Viền</button>
+      <button class="tool-btn clear-btn"               onclick="redrawShape()">🔄 Vẽ lại</button>
+    </div>
+  </div>
+  <div class="canvas-wrapper">
+    <canvas id="coloring-canvas" class="draw-canvas"></canvas>
+  </div>
+</div>
+
+<!-- ══ CHALLENGE ══ -->
+<div id="challenge" class="screen">
+  <!-- Setup -->
+  <div id="ch-setup" class="ch-state active">
+    <div class="screen-header">
+      <button class="back-btn" onclick="goHome()">‹ Về</button>
+      <div class="screen-title">Thử thách</div>
+      <div style="width:60px"></div>
+    </div>
+    <div class="ch-setup-body">
+      <div class="ch-setup-section">
+        <div class="ch-setup-label">Chọn chủ đề:</div>
+        <div class="ch-setup-options">
+          <button onclick="chSelectMod('letters')" id="ch-mod-letters" class="ch-opt selected">🔤 Chữ cái</button>
+          <button onclick="chSelectMod('numbers')" id="ch-mod-numbers" class="ch-opt">🔢 Số</button>
+          <button onclick="chSelectMod('math')"    id="ch-mod-math"    class="ch-opt">➕ Toán</button>
+        </div>
+      </div>
+      <div class="ch-setup-section">
+        <div class="ch-setup-label">Thời gian:</div>
+        <div class="ch-setup-options">
+          <button onclick="chSelectTime(60)"  id="ch-t-60"  class="ch-opt">⏱ 60 giây</button>
+          <button onclick="chSelectTime(90)"  id="ch-t-90"  class="ch-opt selected">⏱ 90 giây</button>
+          <button onclick="chSelectTime(120)" id="ch-t-120" class="ch-opt">⏱ 120 giây</button>
+        </div>
+      </div>
+      <button class="ch-start-btn" onclick="startChallenge()">🚀 Bắt đầu!</button>
+    </div>
+  </div>
+
+  <!-- Playing -->
+  <div id="ch-game" class="ch-state">
+    <div class="ch-game-hdr">
+      <div class="ch-timer" id="ch-timer">90</div>
+      <div class="ch-score-disp" id="ch-score">0 ✓</div>
+    </div>
+    <div class="ch-char-wrap">
+      <div id="ch-char" class="sample-char" style="font-size:100px"></div>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn btn-clear-red" onclick="chClear()">🗑 Xóa</button>
+      <button class="nav-btn btn-next-blue" onclick="chNext()">✓ Tiếp theo</button>
+    </div>
+    <div class="canvas-wrapper">
+      <canvas id="ch-canvas" class="draw-canvas"></canvas>
+    </div>
+  </div>
+
+  <!-- Result -->
+  <div id="ch-result" class="ch-state">
+    <div class="ch-result-body">
+      <div class="ch-result-emoji" id="ch-res-emoji">🎉</div>
+      <div class="ch-result-score" id="ch-final-score"></div>
+      <div class="ch-result-best"  id="ch-best-score"></div>
+      <div class="ch-result-btns">
+        <button class="ch-result-btn" onclick="setupChallenge()">🔄 Thử lại</button>
+        <button class="ch-result-btn" onclick="goHome()">🏠 Về nhà</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DOT GAME ══ -->
+<div id="dotgame" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="goHome()">‹ Về</button>
+    <div class="screen-title" id="dot-title">Nối chấm</div>
+    <div class="progress-label" id="dot-progress">1 / 5</div>
+  </div>
+  <div class="nav-row">
+    <button class="nav-btn btn-prev"      id="dot-prev-btn" onclick="dotNavigate(-1)">‹ Trước</button>
+    <button class="nav-btn btn-clear-red"                   onclick="initDotGame()">🔄 Vẽ lại</button>
+    <button class="nav-btn btn-next-blue" id="dot-next-btn" onclick="dotNavigate(1)">Tiếp ›</button>
+  </div>
+  <div class="canvas-wrapper">
+    <canvas id="dot-canvas" class="draw-canvas"></canvas>
+  </div>
+</div>
+
+<!-- ══ GALLERY ══ -->
+<div id="gallery" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="goHome()">‹ Về</button>
+    <div class="screen-title">Bộ sưu tập</div>
+    <button class="back-btn" onclick="clearGallery()" style="color:#ff3b30;font-size:15px">Xóa hết</button>
+  </div>
+  <div id="gallery-scroll">
+    <div class="gallery-grid" id="gallery-grid"></div>
+  </div>
+  <div class="gallery-empty" id="gallery-empty">Chưa có tranh nào 🎨<br>Vẽ xong bấm 💾 để lưu!</div>
+</div>
+
+<!-- ══ PROGRESS ══ -->
+<div id="progress" class="screen">
+  <div class="screen-header">
+    <button class="back-btn" onclick="goHome()">‹ Về</button>
+    <div class="screen-title">Tiến độ học tập</div>
+    <div style="width:60px"></div>
+  </div>
+  <div class="progress-body" id="progress-body"></div>
+</div>
+
+<!-- PRAISE -->
+<div id="praise"><span id="praise-text">⭐️ Làm tốt lắm! ⭐️</span></div>
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
