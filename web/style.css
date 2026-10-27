@@ -22,7 +22,12 @@ body {
 .home-title {
   font-family: 'Baloo 2', sans-serif;
   font-size: 34px; font-weight: 800; color: #1E1B4B;
-  margin-bottom: 18px; letter-spacing: -0.5px;
+  margin-bottom: 4px; letter-spacing: -0.5px;
+}
+.home-version {
+  font-family: 'Baloo 2', sans-serif;
+  font-size: 12px; font-weight: 700; color: #9CA3AF;
+  margin-bottom: 14px; letter-spacing: 0.5px;
 }
 .home-buttons { width: 100%; max-width: 580px; display: flex; flex-direction: column; gap: 12px; padding-bottom: 28px; }
 
