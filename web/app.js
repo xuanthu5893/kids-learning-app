@@ -196,6 +196,10 @@ function startModule(name) {
   currentModule = name;
   currentIndex  = 0;
   showScreen('practice');
+  // Show check button only for numbers module
+  const checkBtn = document.getElementById('btn-check');
+  checkBtn.style.display = name === 'numbers' ? '' : 'none';
+  hideCheckResult();
   requestAnimationFrame(() => {
     const canvas = document.getElementById('practice-canvas');
     practiceCtx = setupCanvas(canvas);
@@ -208,6 +212,7 @@ function startModule(name) {
       () => {}
     );
   });
+  if (name === 'numbers') initDigitRecognizer();
 }
 
 function clearPractice() {
@@ -215,6 +220,7 @@ function clearPractice() {
   if (!practiceCtx) return;
   drawGrid(practiceCtx, c.clientWidth, c.clientHeight);
   drawTraceGhost(practiceCtx, c.clientWidth, c.clientHeight);
+  hideCheckResult();
 }
 
 function navigate(dir) {
@@ -1059,6 +1065,206 @@ function saveCurrentNotebook() {
   ctx.drawImage(gc, 0, 0);
   ctx.drawImage(dc, 0, 0);
   saveDrawing(comp, 'Vở ô ly');
+}
+
+// ════════════════════════════════════════════════════════
+//  DIGIT RECOGNITION (TF.js)
+// ════════════════════════════════════════════════════════
+let digitModel    = null;   // tf.LayersModel
+let digitReady    = false;
+let digitLoading  = false;
+
+function hideCheckResult() {
+  const el = document.getElementById('check-result');
+  if (el) { el.classList.remove('show'); el.innerHTML = ''; }
+}
+
+function showCheckBadge(correct, predictedDigit, expectedDigit) {
+  const el = document.getElementById('check-result');
+  if (!el) return;
+  if (correct) {
+    el.innerHTML = `<div class="check-badge correct">✅ Đúng rồi!<span class="badge-sub">Bạn vẽ số ${expectedDigit} đẹp lắm!</span></div>`;
+  } else {
+    el.innerHTML = `<div class="check-badge wrong">❌ Thử lại!<span class="badge-sub">Hình như là số ${predictedDigit}?</span></div>`;
+  }
+  el.classList.add('show');
+  // Auto-hide after 3s
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// Lazy-load TF.js from CDN then train/load model
+function initDigitRecognizer() {
+  if (digitReady || digitLoading) return;
+  digitLoading = true;
+  if (window.tf) { _buildOrLoadModel(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js';
+  s.onload  = () => _buildOrLoadModel();
+  s.onerror = () => { digitLoading = false; };
+  document.head.appendChild(s);
+}
+
+async function _buildOrLoadModel() {
+  try {
+    // Try to load from IndexedDB first
+    digitModel = await tf.loadLayersModel('indexeddb://digit-model');
+    digitReady = true; digitLoading = false;
+    return;
+  } catch (_) { /* not cached yet */ }
+  // Build and train a small CNN on synthetic digit data
+  digitModel = _buildCNN();
+  const { xs, ys } = _generateSyntheticData(600); // 60 samples per digit
+  await digitModel.fit(xs, ys, {
+    epochs: 12, batchSize: 64, shuffle: true,
+    callbacks: { onEpochEnd: () => {} }
+  });
+  xs.dispose(); ys.dispose();
+  // Save to IndexedDB for next time
+  try { await digitModel.save('indexeddb://digit-model'); } catch(_) {}
+  digitReady = true; digitLoading = false;
+}
+
+function _buildCNN() {
+  const model = tf.sequential();
+  model.add(tf.layers.conv2d({ inputShape:[28,28,1], filters:16, kernelSize:3, activation:'relu', padding:'same' }));
+  model.add(tf.layers.maxPooling2d({ poolSize:2 }));
+  model.add(tf.layers.conv2d({ filters:32, kernelSize:3, activation:'relu', padding:'same' }));
+  model.add(tf.layers.maxPooling2d({ poolSize:2 }));
+  model.add(tf.layers.flatten());
+  model.add(tf.layers.dense({ units:64, activation:'relu' }));
+  model.add(tf.layers.dropout({ rate:0.3 }));
+  model.add(tf.layers.dense({ units:10, activation:'softmax' }));
+  model.compile({ optimizer:'adam', loss:'categoricalCrossentropy', metrics:['accuracy'] });
+  return model;
+}
+
+// Generate synthetic training images by rendering digits on an offscreen canvas
+function _generateSyntheticData(totalSamples) {
+  const samplesPerDigit = Math.floor(totalSamples / 10);
+  const offscreen = document.createElement('canvas');
+  offscreen.width = offscreen.height = 28;
+  const ctx = offscreen.getContext('2d');
+  const allImages = [];
+  const allLabels = [];
+  const fonts = [
+    'bold 20px Arial', 'bold 20px Verdana', 'bold 22px "Courier New"',
+    'bold 18px Georgia', 'bold 21px Impact', 'bold 19px Tahoma',
+  ];
+  for (let d = 0; d < 10; d++) {
+    for (let i = 0; i < samplesPerDigit; i++) {
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, 28, 28);
+      ctx.fillStyle = 'black';
+      const font = fonts[i % fonts.length];
+      ctx.font = font;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      // Add small random offsets & slight rotation for augmentation
+      const ox = (Math.random() - 0.5) * 4;
+      const oy = (Math.random() - 0.5) * 4;
+      const angle = (Math.random() - 0.5) * 0.3;
+      ctx.save();
+      ctx.translate(14 + ox, 14 + oy);
+      ctx.rotate(angle);
+      ctx.fillText(String(d), 0, 0);
+      ctx.restore();
+      const imgData = ctx.getImageData(0, 0, 28, 28).data;
+      // Convert RGBA → grayscale normalized [0,1], invert so digit=1 background=0
+      const gray = new Float32Array(28 * 28);
+      for (let p = 0; p < 28 * 28; p++) {
+        gray[p] = 1 - imgData[p * 4] / 255; // red channel (grayscale)
+      }
+      allImages.push(gray);
+      allLabels.push(d);
+    }
+  }
+  const xs = tf.tensor4d(
+    allImages.reduce((a, b) => { a.push(...b); return a; }, []),
+    [allImages.length, 28, 28, 1]
+  );
+  const ys = tf.oneHot(tf.tensor1d(allLabels, 'int32'), 10).toFloat();
+  return { xs, ys };
+}
+
+// Preprocess practice canvas: find ink bounding box → crop → resize to 28×28 → tensor
+function _canvasToTensor(canvas) {
+  // Use physical pixel dimensions for getImageData
+  const pw = canvas.width, ph = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const imgData = ctx.getImageData(0, 0, pw, ph);
+  const data = imgData.data;
+
+  // Find bounding box of dark (ink) pixels in physical pixel space
+  let minX=pw, maxX=0, minY=ph, maxY=0;
+  for (let y = 0; y < ph; y++) {
+    for (let x = 0; x < pw; x++) {
+      const i = (y * pw + x) * 4;
+      const brightness = (data[i] + data[i+1] + data[i+2]) / 3;
+      if (brightness < 180) { // dark pixel = ink (grid lines ~229, safe threshold)
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX <= minX || maxY <= minY) return null; // blank canvas
+
+  // Padding in physical pixels
+  const pad = Math.max((maxX - minX) * 0.15, (maxY - minY) * 0.15, 6);
+  minX = Math.max(0, Math.floor(minX - pad));
+  maxX = Math.min(pw, Math.ceil(maxX + pad));
+  minY = Math.max(0, Math.floor(minY - pad));
+  maxY = Math.min(ph, Math.ceil(maxY + pad));
+
+  const cropW = maxX - minX, cropH = maxY - minY;
+
+  // Render crop into 28×28 offscreen canvas using physical pixel coordinates
+  const off = document.createElement('canvas');
+  off.width = off.height = 28;
+  const oc = off.getContext('2d');
+  oc.fillStyle = 'white'; oc.fillRect(0, 0, 28, 28);
+  const scale = Math.min(22 / cropW, 22 / cropH);
+  const drawW = cropW * scale, drawH = cropH * scale;
+  const drawX = (28 - drawW) / 2, drawY = (28 - drawH) / 2;
+  // drawImage with explicit source rect reads physical pixels from source canvas
+  oc.drawImage(canvas, minX, minY, cropW, cropH, drawX, drawY, drawW, drawH);
+
+  const oData = oc.getImageData(0, 0, 28, 28).data;
+  const gray = new Float32Array(28 * 28);
+  for (let p = 0; p < 28 * 28; p++) {
+    gray[p] = 1 - oData[p * 4] / 255;
+  }
+  // Return tensor — caller is responsible for dispose
+  return tf.tensor4d(Array.from(gray), [1, 28, 28, 1]);
+}
+
+async function checkNumberAnswer() {
+  if (!digitReady) {
+    const el = document.getElementById('check-result');
+    el.innerHTML = '<div class="check-badge loading">⏳ Đang tải...<span class="badge-sub">Vui lòng đợi xíu!</span></div>';
+    el.classList.add('show');
+    // Wait for model to be ready (max 15s)
+    let waited = 0;
+    while (!digitReady && waited < 150) { await new Promise(r=>setTimeout(r,100)); waited++; }
+    if (!digitReady) { el.innerHTML = '<div class="check-badge wrong">😢 Chưa tải được mô hình</div>'; return; }
+    el.classList.remove('show'); el.innerHTML = '';
+  }
+
+  const canvas = document.getElementById('practice-canvas');
+  const expected = parseInt(MODULES.numbers.items[currentIndex]);
+  const tensor = _canvasToTensor(canvas);
+  if (!tensor) {
+    showCheckBadge(false, '?', expected);
+    return;
+  }
+  const preds = digitModel.predict(tensor);
+  const argT = preds.argMax(1);
+  const predDigit = (await argT.data())[0];
+  argT.dispose(); preds.dispose(); tensor.dispose();
+
+  const correct = predDigit === expected;
+  showCheckBadge(correct, predDigit, expected);
+  if (correct) playDing();
 }
 
 window.addEventListener('resize', () => {

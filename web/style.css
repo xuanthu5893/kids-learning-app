@@ -176,6 +176,26 @@ body {
 .btn-next-green  { background: #F0FDF4; border-color: #86EFAC; color: #15803D; box-shadow: 0 4px 0 #14532D; }
 .btn-next-green:active  { box-shadow: 0 1px 0 #14532D; }
 
+/* ── CHECK RESULT OVERLAY ── */
+#check-result {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none; opacity: 0;
+  transition: opacity .2s cubic-bezier(.34,1.56,.64,1), transform .2s cubic-bezier(.34,1.56,.64,1);
+  transform: scale(.6);
+}
+#check-result.show { opacity: 1; transform: scale(1); pointer-events: auto; }
+.check-badge {
+  border-radius: 28px; padding: 18px 32px;
+  font-family: 'Baloo 2', sans-serif; font-size: 36px; font-weight: 800;
+  text-align: center; line-height: 1.2; display: flex; flex-direction: column; align-items: center; gap: 4px;
+  box-shadow: 0 8px 0 rgba(0,0,0,.25), 0 14px 36px rgba(0,0,0,.18);
+}
+.check-badge.correct  { background: #F0FDF4; border: 3px solid #86EFAC; color: #15803D; box-shadow: 0 8px 0 #14532D, 0 14px 36px rgba(22,163,74,.25); }
+.check-badge.wrong    { background: #FEF2F2; border: 3px solid #F87171; color: #DC2626; box-shadow: 0 8px 0 #991B1B, 0 14px 36px rgba(239,68,68,.25); }
+.check-badge.loading  { background: #EEF2FF; border: 3px solid #818CF8; color: #4338CA; font-size: 22px; }
+.check-badge .badge-sub { font-size: 16px; font-weight: 700; opacity: .75; }
+
 /* ── FREE DRAW TOOLBAR ── */
 .draw-toolbar {
   padding: 6px 14px 10px; flex-shrink: 0;

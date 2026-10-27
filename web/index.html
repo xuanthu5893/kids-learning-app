@@ -88,10 +88,12 @@
   <div class="nav-row">
     <button class="nav-btn btn-prev"      id="btn-prev" onclick="navigate(-1)">‹ Trước</button>
     <button class="nav-btn btn-clear-red"              onclick="clearPractice()">🗑 Xóa</button>
+    <button class="nav-btn btn-next-green" id="btn-check" onclick="checkNumberAnswer()" style="display:none">✓ Kiểm tra</button>
     <button class="nav-btn btn-next-blue" id="btn-next" onclick="navigate(1)">Tiếp ›</button>
   </div>
   <div class="canvas-wrapper">
     <canvas id="practice-canvas" class="draw-canvas"></canvas>
+    <div id="check-result"></div>
   </div>
 </div>
 
